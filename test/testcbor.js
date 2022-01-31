@@ -20,53 +20,27 @@ contract('CBOR', function(accounts) {
 
   it('returns > 8 byte int as bytes', async function() {
     var test = await TestCBOR.new();
-    var result = await test.getTestDataBigInt();
-
-    // js CBOR library doesn't support negative bignum encodings as described
-    // in the RFC, so we have to verify the raw codes
-    assert.equal(result, '0x' +
-      '9f' +                                       // array(*)
-        'c3' +                                     // tag(3)
-          '58' + '20' +                            // bytes(32)
-            '7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' +   // "\x7F\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-        'c3' +                                     // tag(3)
-          '58' + '20' +                            // bytes(32)
-            '7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe' +   // "\x7F\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFE"
-        'c2' +                                     // tag(2)
-          '58' + '20' +                            // bytes(32)
-            '7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe' +   // "\x7F\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFE"
-        'c2' +                                     // tag(2)
-          '58' + '20' +                            // bytes(32)
-            '7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' +   // "\x7F\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-        '3b' + '7fffffffffffffff' +                // negative(9223372036854775807)
-        '3b' + '7ffffffffffffffe' +                // negative(9223372036854775806)
-        '1b' + '7ffffffffffffffe' +                // unsigned(9223372036854775806)
-        '1b' + '7fffffffffffffff' +                // unsigned(9223372036854775807)
-      'ff'                                         // primitive(*)
-    );
+    var result = cbor.decodeFirstSync(new Buffer.from((await test.getTestDataBigInt()).slice(2), 'hex'));
+    expect(result.map((x) => x.toFixed())).to.deep.equal([
+      '-57896044618658097711785492504343953926634992332820282019728792003956564819968',
+      '-57896044618658097711785492504343953926634992332820282019728792003956564819967',
+      '57896044618658097711785492504343953926634992332820282019728792003956564819966',
+      '57896044618658097711785492504343953926634992332820282019728792003956564819967',
+      '-9223372036854775808',
+      '-9223372036854775807',
+      '9223372036854775806',
+      '9223372036854775807'
+    ]);
   });
 
   it('returns > 8 byte uint as bytes', async function() {
     var test = await TestCBOR.new();
-    var result = await test.getTestDataBigUint();
-
-    // js CBOR library doesn't support negative bignum encodings as described
-    // in the RFC, so we have to verify the raw codes
-    assert.equal(result, '0x' +
-      "9f" +                                      // array(*)
-        "c2" +                                    // tag(2)
-          "5820" +                                // bytes(32)
-            "0000000000000000000000000000000000000000000000000000000000000000" + // "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000"
-        "c2" +                                    // tag(2)
-          "5820" +                                // bytes(32)
-            "0000000000000000000000000000000000000000000000000000000000000001" + // "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0001"
-        "c2" +                                    // tag(2)
-          "5820" +                                // bytes(32)
-            "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe" + // "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFE"
-        "c2" +                                    // tag(2)
-          "5820" +                                // bytes(32)
-            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" + // "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-      "ff"                                        // primitive(*)
-    );
+    var result = cbor.decodeFirstSync(new Buffer.from((await test.getTestDataBigUint()).slice(2), 'hex'));
+    expect(result.map((x) => x.toFixed())).to.deep.equal([
+      '0',
+      '1',
+      '115792089237316195423570985008687907853269984665640564039457584007913129639934',
+      '115792089237316195423570985008687907853269984665640564039457584007913129639935'
+    ]);
   });
 });
